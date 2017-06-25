@@ -50,6 +50,7 @@
 #define SMB_MASK(LEFT_BIT_POS, RIGHT_BIT_POS) \
 		_SMB_MASK((LEFT_BIT_POS) - (RIGHT_BIT_POS) + 1, \
 				(RIGHT_BIT_POS))
+
 /* Config registers */
 struct smbchg_regulator {
 	struct regulator_desc	rdesc;
@@ -445,7 +446,11 @@ module_param_named(
 	int, S_IRUSR | S_IWUSR
 );
 
+#ifdef CONFIG_FORCE_FAST_CHARGE
+static int smbchg_default_hvdcp_icl_ma = 2500;
+#else
 static int smbchg_default_hvdcp_icl_ma = 1800;
+#endif
 module_param_named(
 	default_hvdcp_icl_ma, smbchg_default_hvdcp_icl_ma,
 	int, S_IRUSR | S_IWUSR
@@ -457,7 +462,11 @@ module_param_named(
 	int, S_IRUSR | S_IWUSR
 );
 
+#ifdef CONFIG_FORCE_FAST_CHARGE
+static int smbchg_default_dcp_icl_ma = 2500;
+#else
 static int smbchg_default_dcp_icl_ma = 1800;
+#endif
 module_param_named(
 	default_dcp_icl_ma, smbchg_default_dcp_icl_ma,
 	int, S_IRUSR | S_IWUSR
@@ -1409,6 +1418,8 @@ static int dc_ilim_ma_table_8996[] = {
 	2200,
 	2300,
 	2400,
+	2500,
+	2600,
 };
 
 static const int fcc_comp_table_8994[] = {
@@ -1423,6 +1434,11 @@ static const int fcc_comp_table_8996[] = {
 	1100,
 	1200,
 	1500,
+	1600,
+	1800,
+	2000,
+	2500,
+	2600,
 };
 
 static const int aicl_rerun_period[] = {

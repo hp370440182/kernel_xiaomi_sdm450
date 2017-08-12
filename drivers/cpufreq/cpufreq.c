@@ -414,6 +414,13 @@ static void cpufreq_notify_transition(struct cpufreq_policy *policy,
  * This function is called everytime the CPU load is evaluated by the
  * ondemand governor. It notifies userspace of cpu load changes via sysfs.
  */
+void cpufreq_notify_utilization(struct cpufreq_policy *policy,
+		unsigned int util)
+{
+	if (policy)
+		policy->util = util;
+}
+
 
 /* Do post notifications when there are chances that transition has failed */
 static void cpufreq_notify_post_transition(struct cpufreq_policy *policy,

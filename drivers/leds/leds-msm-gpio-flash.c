@@ -1,4 +1,5 @@
-/* Copyright (c) 2013-2014, 2017-2018 The Linux Foundation. All rights reserved.
+/* Copyright (c) 2013-2014, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2018 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -24,11 +25,7 @@
 
 /* #define CONFIG_GPIO_FLASH_DEBUG */
 #undef CDBG
-#ifdef CONFIG_GPIO_FLASH_DEBUG
 #define CDBG(fmt, args...) pr_err(fmt, ##args)
-#else
-#define CDBG(fmt, args...) do { } while (0)
-#endif
 
 #define LED_GPIO_FLASH_DRIVER_NAME	"qcom,leds-gpio-flash"
 #define LED_TRIGGER_DEFAULT		"none"
@@ -36,7 +33,6 @@
 #define GPIO_OUT_LOW          (0 << 1)
 #define GPIO_OUT_HIGH         (1 << 1)
 
-#define SEQ_NUM 2
 
 enum msm_flash_seq_type_t {
 	FLASH_EN,
@@ -70,7 +66,8 @@ static void led_gpio_brightness_set(struct led_classdev *led_cdev,
 {
 	int rc = 0;
 	struct led_gpio_flash_data *flash_led =
-	    container_of(led_cdev, struct led_gpio_flash_data, cdev);
+	   container_of(led_cdev, struct led_gpio_flash_data, cdev);
+
 	int brightness = value;
 	int flash_en = 0, flash_now = 0;
 
@@ -90,13 +87,13 @@ static void led_gpio_brightness_set(struct led_classdev *led_cdev,
 	}
 	CDBG("%s:flash_en=%d, flash_now=%d\n", __func__, flash_en, flash_now);
 
-	rc = gpio_direction_output(flash_led->flash_en, flash_en);
+	rc = gpio_direction_output(93/*flash_led->flash_en*/, flash_en);
 	if (rc) {
 		pr_err("%s: Failed to set gpio %d\n", __func__,
 		       flash_led->flash_en);
 		goto err;
 	}
-	rc = gpio_direction_output(flash_led->flash_now, flash_now);
+	rc = gpio_direction_output(90/*flash_led->flash_now*/, flash_now);
 	if (rc) {
 		pr_err("%s: Failed to set gpio %d\n", __func__,
 		       flash_led->flash_now);
@@ -111,26 +108,29 @@ static enum led_brightness led_gpio_brightness_get(struct led_classdev
 						   *led_cdev)
 {
 	struct led_gpio_flash_data *flash_led =
-	    container_of(led_cdev, struct led_gpio_flash_data, cdev);
-
+	   container_of(led_cdev, struct led_gpio_flash_data, cdev);
 	return flash_led->brightness;
 }
 
-static int led_gpio_flash_probe(struct platform_device *pdev)
+int led_gpio_flash_probe(struct platform_device *pdev)
 {
 	int rc = 0;
 	const char *temp_str;
 	struct led_gpio_flash_data *flash_led = NULL;
 	struct device_node *node = pdev->dev.of_node;
 	const char *seq_name = NULL;
-	uint32_t array_flash_seq[SEQ_NUM];
-	uint32_t array_torch_seq[SEQ_NUM];
+	uint32_t array_flash_seq[2];
+	uint32_t array_torch_seq[2];
 	int i = 0;
+	uint32_t flash_gpio_en, flash_gpio_now;
 
 	flash_led = devm_kzalloc(&pdev->dev, sizeof(struct led_gpio_flash_data),
 				 GFP_KERNEL);
-	if (flash_led == NULL)
+	if (flash_led == NULL) {
+		dev_err(&pdev->dev, "%s:%d Unable to allocate memory\n",
+			__func__, __LINE__);
 		return -ENOMEM;
+	}
 
 	flash_led->cdev.default_trigger = LED_TRIGGER_DEFAULT;
 	rc = of_property_read_string(node, "linux,default-trigger", &temp_str);
@@ -155,43 +155,44 @@ static int led_gpio_flash_probe(struct platform_device *pdev)
 	if (rc)
 		pr_err("%s:set state failed!\n", __func__);
 
-	flash_led->flash_en = of_get_named_gpio(node, "qcom,flash-en", 0);
+
+	flash_led->flash_en = of_property_read_u32(node, "qcom,flash-en", &flash_gpio_en);
 	if (flash_led->flash_en < 0) {
 		dev_err(&pdev->dev,
 			"Looking up %s property in node %s failed. rc =  %d\n",
-			"qcom,flash-en", node->full_name, flash_led->flash_en);
+			"flash-en", node->full_name, flash_led->flash_en);
 		goto error;
 	} else {
-		rc = gpio_request(flash_led->flash_en, "FLASH_EN");
+		rc = gpio_request(flash_gpio_en, "FLASH_EN");
 		if (rc) {
 			dev_err(&pdev->dev,
 				"%s: Failed to request gpio %d,rc = %d\n",
-				__func__, flash_led->flash_en, rc);
+				__func__, flash_gpio_en, rc);
 
 			goto error;
 		}
 	}
 
-	flash_led->flash_now = of_get_named_gpio(node, "qcom,flash-now", 0);
+
+	flash_led->flash_now = of_property_read_u32(node, "qcom,flash-now", &flash_gpio_now);
 	if (flash_led->flash_now < 0) {
 		dev_err(&pdev->dev,
 			"Looking up %s property in node %s failed. rc =  %d\n",
-			"qcom,flash-now", node->full_name,
-			flash_led->flash_now);
+			"flash-now", node->full_name, flash_led->flash_now);
 		goto error;
 	} else {
-		rc = gpio_request(flash_led->flash_now, "FLASH_NOW");
+		rc = gpio_request(flash_gpio_now, "FLASH_NOW");
 		if (rc) {
 			dev_err(&pdev->dev,
 				"%s: Failed to request gpio %d,rc = %d\n",
-				__func__, flash_led->flash_now, rc);
+				__func__, flash_gpio_now, rc);
 			goto error;
 		}
 	}
 
 	rc = of_property_read_string(node, "linux,name", &flash_led->cdev.name);
 	if (rc) {
-		dev_err(&pdev->dev, "%s: Failed to read linux,name. rc = %d\n",
+		dev_err(&pdev->dev, "%s: Failed to read linux name. rc = %d\n",
 			__func__, rc);
 		goto error;
 	}
@@ -200,7 +201,7 @@ static int led_gpio_flash_probe(struct platform_device *pdev)
 		array_flash_seq, 2);
 
 	if (rc < 0) {
-		pr_err("%s get qcom,flash-seq-val failed %d\n",
+		pr_err("%s get flash op seq failed %d\n",
 			__func__, __LINE__);
 		goto error;
 	}
@@ -209,19 +210,19 @@ static int led_gpio_flash_probe(struct platform_device *pdev)
 		array_torch_seq, 2);
 
 	if (rc < 0) {
-		pr_err("%s get qcom,torch-seq-val failed %d\n",
+		pr_err("%s get torch op seq failed %d\n",
 			__func__, __LINE__);
 		goto error;
 	}
 
-	for (i = 0; i < SEQ_NUM; i++) {
+	for (i = 0; i < 2; i++) {
 		rc = of_property_read_string_index(node,
 			"qcom,op-seq", i,
 			&seq_name);
 		CDBG("%s seq_name[%d] = %s\n", __func__, i,
 			seq_name);
 		if (rc < 0)
-			dev_err(&pdev->dev, "%s qcom,op-seq failed %d\n",
+			dev_err(&pdev->dev, "%s failed %d\n",
 				__func__, __LINE__);
 
 		if (!strcmp(seq_name, "flash_en")) {
@@ -275,6 +276,7 @@ static int led_gpio_flash_probe(struct platform_device *pdev)
 			__func__, rc);
 		goto error;
 	}
+	pr_err("%s:probe successfully!\n", __func__);
 	return 0;
 
 error:
@@ -284,11 +286,10 @@ error:
 	return rc;
 }
 
-static int led_gpio_flash_remove(struct platform_device *pdev)
+int led_gpio_flash_remove(struct platform_device *pdev)
 {
 	struct led_gpio_flash_data *flash_led =
-	    (struct led_gpio_flash_data *)platform_get_drvdata(pdev);
-
+	   (struct led_gpio_flash_data *)platform_get_drvdata(pdev);
 	if (IS_ERR(flash_led->pinctrl))
 		devm_pinctrl_put(flash_led->pinctrl);
 	led_classdev_unregister(&flash_led->cdev);

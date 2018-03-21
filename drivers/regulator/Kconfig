@@ -908,4 +908,3 @@ config REGULATOR_KRYO
 	  CPU subsystem.
 
 endif
-

@@ -798,6 +798,13 @@ ifeq ($(shell $(CONFIG_SHELL) $(srctree)/scripts/gcc-goto.sh $(CC)), y)
 	KBUILD_CFLAGS += -DCC_HAVE_ASM_GOTO
 endif
 
+ifeq ($(WT_COMPILE_FACTORY_VERSION),yes)
+	KBUILD_CFLAGS += -DWT_COMPILE_FACTORY_VERSION
+endif
+ifeq ($(WT_FINAL_RELEASE),yes)
+	KBUILD_CFLAGS += -DWT_FINAL_RELEASE
+endif
+
 include $(srctree)/scripts/Makefile.kasan
 include $(srctree)/scripts/Makefile.extrawarn
 include $(srctree)/scripts/Makefile.ubsan

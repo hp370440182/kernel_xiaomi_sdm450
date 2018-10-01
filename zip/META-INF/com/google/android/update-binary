@@ -1,6 +1,6 @@
 #!/sbin/sh
-# Thunder Backend
-# Thunder Kernel
+# THUNDER-STORM Backend
+# THUNDER-STORM Kernel
 
 OUTFD=/proc/self/fd/$2;
 ZIPFILE="$3";
@@ -28,7 +28,7 @@ debugging() {
   case $(basename "$ZIPFILE" .zip) in
     *-debugging)
       ui_print " ";
-      ui_print "Thundereating debugging archive in zip directory...";
+      ui_print "THUNDER-STORMeating debugging archive in zip directory...";
       $bb tar -czvf "$DIR/anykernel2-$(date +%Y-%m-%d_%H%M%S)-debug.tgz" /tmp/*;
     ;;
   esac;
@@ -59,8 +59,8 @@ $bb chmod -R 755 /tmp/anykernel/tools /tmp/anykernel/bin;
 
 ui_print "$(file_getprop /tmp/anykernel/anykernel.sh kernel.string)";
 ui_print " ";
-ui_print "Thunder Kernel For Redmi 5(rosy) ";
-ui_print "By Revanth Tolety  ";
+ui_print "THUNDER-STORM Kernel For Redmi 5(rosy) ";
+ui_print "By MoonWayStar [Revanth]  ";
 ui_print " ";
 ui_print "Checking device...";
 ui_print " ";

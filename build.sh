@@ -7,4 +7,4 @@ make -j32 -C $(pwd) O=output
 cp -r output/arch/arm64/boot/Image.gz-dtb zip/
 cd zip
 mv Image.gz-dtb zImage 
-zip -r Thunder-Kernel-Rosy-v1.zip *
+zip -r THUNDER-STORM-KERNEL-V1.zip *

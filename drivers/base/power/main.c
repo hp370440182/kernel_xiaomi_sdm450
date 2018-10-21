@@ -1360,7 +1360,7 @@ static int __device_suspend(struct device *dev, pm_message_t state, bool async)
 		dev->power.direct_complete = false;
 		goto Complete;
 	}
-
+	
 	/*
 	 * If a device configured to wake up the system from sleep states
 	 * has been suspended at run time and there's a resume request pending
@@ -1371,6 +1371,9 @@ static int __device_suspend(struct device *dev, pm_message_t state, bool async)
 		pm_wakeup_event(dev, 0);
 
 	if (pm_wakeup_pending()) {
+		pm_get_active_wakeup_sources(suspend_abort,
+			MAX_SUSPEND_ABORT_LEN);
+		log_suspend_abort_reason(suspend_abort);
 		dev->power.direct_complete = false;
 		async_error = -EBUSY;
 		goto Complete;
